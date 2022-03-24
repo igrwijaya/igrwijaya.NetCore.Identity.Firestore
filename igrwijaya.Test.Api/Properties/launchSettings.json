@@ -1,0 +1,17 @@
+﻿{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "igrwijaya.Test.Api": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "applicationUrl": "https://localhost:7120;http://localhost:5120",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "GOOGLE_APPLICATION_CREDENTIALS": "D:\\Workspace\\Hestara\\Repo\\igrwijaya.Identity.Firestore\\igrwijaya.Identity.Firestore\\igrwijaya.Test.Api\\google-hestara-platform.json",
+        "GOOGLE_PROJECT_ID": "hestara-platform"
+      }
+    }
+  }
+}
