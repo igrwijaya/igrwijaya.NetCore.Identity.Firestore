@@ -9,7 +9,7 @@
       "applicationUrl": "https://localhost:7120;http://localhost:5120",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "GOOGLE_APPLICATION_CREDENTIALS": "D:\\Workspace\\Hestara\\Repo\\igrwijaya.Identity.Firestore\\igrwijaya.Identity.Firestore\\igrwijaya.Test.Api\\google-hestara-platform.json",
+        "GOOGLE_APPLICATION_CREDENTIALS": "G:\\NET_Packages\\igrwijaya.NetCore.Identity.Firestore\\igrwijaya.Test.Api\\google-hestara-platform.json",
         "GOOGLE_PROJECT_ID": "hestara-platform"
       }
     }

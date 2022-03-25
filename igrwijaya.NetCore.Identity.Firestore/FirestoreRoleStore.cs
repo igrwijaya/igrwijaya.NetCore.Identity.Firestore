@@ -1,230 +1,235 @@
-﻿using Google.Cloud.Firestore;
+﻿using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Identity;
 
-namespace igrwijaya.NetCore.Identity.Firestore;
-
-public partial class FirestoreRoleStore<TRole>: IRoleStore<TRole> where TRole : FirestoreIdentityRole
+namespace igrwijaya.NetCore.Identity.Firestore
 {
-    #region Private Methods
-
-    private readonly CollectionReference _roleRef;
-
-    #endregion
-    
-    public IdentityErrorDescriber ErrorDescriber { get; }
-
-    public FirestoreRoleStore(IdentityErrorDescriber errorDescriber = null)
+    public class FirestoreRoleStore<TRole> : IRoleStore<TRole> where TRole : FirestoreIdentityRole
     {
-        ErrorDescriber = errorDescriber;
-        var firestore = FirestoreDb.Create(Environment.GetEnvironmentVariable("GOOGLE_PROJECT_ID"));
-        _roleRef = firestore.Collection("roles");
-    }
+        #region Private Methods
 
-    #region IDisposable
+        private readonly CollectionReference _roleRef;
 
-    private void ThrowIfDisposed()
-    {
-        if (_disposed)
+        #endregion
+
+        public IdentityErrorDescriber ErrorDescriber { get; }
+
+        public FirestoreRoleStore(IdentityErrorDescriber errorDescriber = null)
         {
-            throw new ObjectDisposedException(GetType().Name);
-        }
-    }
-
-    private bool _disposed;
-
-    public void Dispose()
-    {
-        _disposed = true;
-    }
-
-    #endregion
-
-    public async Task<IdentityResult> CreateAsync(TRole role, CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        ThrowIfDisposed();
-
-        if (role == null)
-        {
-            throw new ArgumentNullException(nameof(role));
+            ErrorDescriber = errorDescriber;
+            var firestore = FirestoreDb.Create(Environment.GetEnvironmentVariable("GOOGLE_PROJECT_ID"));
+            _roleRef = firestore.Collection("roles");
         }
 
-        role.Id = Guid.NewGuid().ToString("N");
-        
-        await _roleRef.AddAsync(role, cancellationToken);
+        #region IDisposable
 
-        return IdentityResult.Success;
-    }
-
-    public async Task<IdentityResult> UpdateAsync(TRole role, CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        ThrowIfDisposed();
-
-        if (role == null)
+        private void ThrowIfDisposed()
         {
-            throw new ArgumentNullException(nameof(role));
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(GetType().Name);
+            }
         }
 
-        await _roleRef
-            .Document(role.Id)
-            .SetAsync(role, SetOptions.MergeAll, cancellationToken);
+        private bool _disposed;
 
-        return IdentityResult.Success;
-    }
-
-    public async Task<IdentityResult> DeleteAsync(TRole role, CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        ThrowIfDisposed();
-
-        if (role == null)
+        public void Dispose()
         {
-            throw new ArgumentNullException(nameof(role));
+            _disposed = true;
         }
 
-        await _roleRef
-            .Document(role.Id)
-            .DeleteAsync(Precondition.MustExist, cancellationToken);
+        #endregion
 
-        return IdentityResult.Success;
-    }
-
-    public async Task<string> GetRoleIdAsync(TRole role, CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        ThrowIfDisposed();
-
-        if (role == null)
+        public async Task<IdentityResult> CreateAsync(TRole role, CancellationToken cancellationToken)
         {
-            throw new ArgumentNullException(nameof(role));
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+
+            if (role == null)
+            {
+                throw new ArgumentNullException(nameof(role));
+            }
+
+            role.Id = Guid.NewGuid().ToString("N");
+
+            await _roleRef.AddAsync(role, cancellationToken);
+
+            return IdentityResult.Success;
         }
 
-        return role.Id;
-    }
-
-    public async Task<string> GetRoleNameAsync(TRole role, CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        ThrowIfDisposed();
-
-        if (role == null)
+        public async Task<IdentityResult> UpdateAsync(TRole role, CancellationToken cancellationToken)
         {
-            throw new ArgumentNullException(nameof(role));
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+
+            if (role == null)
+            {
+                throw new ArgumentNullException(nameof(role));
+            }
+
+            await _roleRef
+                .Document(role.Id)
+                .SetAsync(role, SetOptions.MergeAll, cancellationToken);
+
+            return IdentityResult.Success;
         }
 
-        return role.Name;
-    }
-
-    public Task SetRoleNameAsync(TRole role, string roleName, CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        ThrowIfDisposed();
-        
-        if (string.IsNullOrEmpty(roleName))
+        public async Task<IdentityResult> DeleteAsync(TRole role, CancellationToken cancellationToken)
         {
-            throw new ArgumentNullException(nameof(roleName));
-        }
-        
-        if (role == null)
-        {
-            throw new ArgumentNullException(nameof(role));
-        }
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
 
-        role.Name = roleName;
-        
-        return Task.CompletedTask;
-    }
+            if (role == null)
+            {
+                throw new ArgumentNullException(nameof(role));
+            }
 
-    public async Task<string> GetNormalizedRoleNameAsync(TRole role, CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        ThrowIfDisposed();
+            await _roleRef
+                .Document(role.Id)
+                .DeleteAsync(Precondition.MustExist, cancellationToken);
 
-        if (role == null)
-        {
-            throw new ArgumentNullException(nameof(role));
+            return IdentityResult.Success;
         }
 
-        return role.NormalizedName;
-    }
+        public Task<string> GetRoleIdAsync(TRole role, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
 
-    public Task SetNormalizedRoleNameAsync(TRole role, string normalizedName, CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        ThrowIfDisposed();
-        
-        if (string.IsNullOrEmpty(normalizedName))
-        {
-            throw new ArgumentNullException(nameof(normalizedName));
-        }
-        
-        if (role == null)
-        {
-            throw new ArgumentNullException(nameof(role));
+            if (role == null)
+            {
+                throw new ArgumentNullException(nameof(role));
+            }
+
+            return Task.FromResult(role.Id);
         }
 
-        role.NormalizedName = normalizedName;
-        
-        return Task.CompletedTask;
-    }
-
-    public async Task<TRole> FindByIdAsync(string roleId, CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        ThrowIfDisposed();
-
-        cancellationToken.ThrowIfCancellationRequested();
-        var identityRole = await ReadRoleAsync(roleId, cancellationToken);
-        
-        return identityRole;
-    }
-
-    public async Task<TRole> FindByNameAsync(string normalizedRoleName, CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        ThrowIfDisposed();
-
-        var query = await _roleRef
-            .WhereEqualTo(nameof(FirestoreIdentityRole.NormalizedName), normalizedRoleName)
-            .Limit(1)
-            .GetSnapshotAsync(cancellationToken);
-
-        if (query.Count <= 0)
+        public Task<string> GetRoleNameAsync(TRole role, CancellationToken cancellationToken)
         {
-            return null;
-        }
-        
-        var userDoc = query.Documents.FirstOrDefault();
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
 
-        if (userDoc == null)
-        {
-            return null;
+            if (role == null)
+            {
+                throw new ArgumentNullException(nameof(role));
+            }
+
+            return Task.FromResult(role.Name);
         }
 
-        return userDoc.ConvertTo<TRole>();
-    }
-    
-    private async Task<TRole> ReadRoleAsync(string roleId, CancellationToken cancellationToken)
-    {
-        var docRef = await _roleRef
-            .Document(roleId)
-            .GetSnapshotAsync(cancellationToken);
-        
-        if (docRef == null)
+        public Task SetRoleNameAsync(TRole role, string roleName, CancellationToken cancellationToken)
         {
-            return null;
-        }
-        
-        var role = docRef.ConvertTo<TRole>();
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
 
-        if (role == null)
+            if (string.IsNullOrEmpty(roleName))
+            {
+                throw new ArgumentNullException(nameof(roleName));
+            }
+
+            if (role == null)
+            {
+                throw new ArgumentNullException(nameof(role));
+            }
+
+            role.Name = roleName;
+
+            return Task.CompletedTask;
+        }
+
+        public Task<string> GetNormalizedRoleNameAsync(TRole role, CancellationToken cancellationToken)
         {
-            return null;
-        }
-                
-        role.Id = docRef.Id;
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
 
-        return role;
+            if (role == null)
+            {
+                throw new ArgumentNullException(nameof(role));
+            }
+
+            return Task.FromResult(role.NormalizedName);
+        }
+
+        public Task SetNormalizedRoleNameAsync(TRole role, string normalizedName, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+
+            if (string.IsNullOrEmpty(normalizedName))
+            {
+                throw new ArgumentNullException(nameof(normalizedName));
+            }
+
+            if (role == null)
+            {
+                throw new ArgumentNullException(nameof(role));
+            }
+
+            role.NormalizedName = normalizedName;
+
+            return Task.CompletedTask;
+        }
+
+        public async Task<TRole> FindByIdAsync(string roleId, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+
+            cancellationToken.ThrowIfCancellationRequested();
+            var identityRole = await ReadRoleAsync(roleId, cancellationToken);
+
+            return identityRole;
+        }
+
+        public async Task<TRole> FindByNameAsync(string normalizedRoleName, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+
+            var query = await _roleRef
+                .WhereEqualTo(nameof(FirestoreIdentityRole.NormalizedName), normalizedRoleName)
+                .Limit(1)
+                .GetSnapshotAsync(cancellationToken);
+
+            if (query.Count <= 0)
+            {
+                return null;
+            }
+
+            var userDoc = query.Documents.FirstOrDefault();
+
+            if (userDoc == null)
+            {
+                return null;
+            }
+
+            return userDoc.ConvertTo<TRole>();
+        }
+
+        private async Task<TRole> ReadRoleAsync(string roleId, CancellationToken cancellationToken)
+        {
+            var docRef = await _roleRef
+                .Document(roleId)
+                .GetSnapshotAsync(cancellationToken);
+
+            if (docRef == null)
+            {
+                return null;
+            }
+
+            var role = docRef.ConvertTo<TRole>();
+
+            if (role == null)
+            {
+                return null;
+            }
+
+            role.Id = docRef.Id;
+
+            return role;
+        }
     }
 }

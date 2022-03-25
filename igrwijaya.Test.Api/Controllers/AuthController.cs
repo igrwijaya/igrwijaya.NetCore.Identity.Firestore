@@ -41,9 +41,7 @@ public class AuthController : Controller
     {
         var user = await _userManager.FindByNameAsync("igrwijaya");
 
-        await _userManager.AddToRoleAsync(user, "ADMIN");
-
-        var result = await _signInManager.PasswordSignInAsync(user, "asd*", false, false);
+        var result = await _signInManager.PasswordSignInAsync(user, "Temp123*", false, false);
 
         return Ok(result);
     }

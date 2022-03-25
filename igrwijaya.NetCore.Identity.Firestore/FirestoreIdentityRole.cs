@@ -1,26 +1,27 @@
 ﻿using Google.Cloud.Firestore;
 
-namespace igrwijaya.NetCore.Identity.Firestore;
-
-[FirestoreData]
-public class FirestoreIdentityRole
+namespace igrwijaya.NetCore.Identity.Firestore
 {
-    public FirestoreIdentityRole()
+    [FirestoreData]
+    public class FirestoreIdentityRole
     {
+        public FirestoreIdentityRole()
+        {
         
-    }
+        }
 
-    public FirestoreIdentityRole(string name)
-    {
-        Name = name;
+        public FirestoreIdentityRole(string name)
+        {
+            Name = name;
+        }
+    
+        [FirestoreProperty]
+        public string Id { get; internal set; }
+    
+        [FirestoreProperty]
+        public string Name { get; internal set; }
+    
+        [FirestoreProperty]
+        public string NormalizedName { get; internal set; }
     }
-    
-    [FirestoreProperty]
-    public string Id { get; internal set; }
-    
-    [FirestoreProperty]
-    public string Name { get; internal set; }
-    
-    [FirestoreProperty]
-    public string NormalizedName { get; internal set; }
 }
