@@ -10,6 +10,7 @@
         <PackageTags>netcore, identity, firestore</PackageTags>
         <TargetFrameworks>net6.0;netstandard2.1</TargetFrameworks>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageVersion>1.0.1</PackageVersion>
     </PropertyGroup>
 
     <ItemGroup>
