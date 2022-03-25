@@ -49,7 +49,7 @@ public partial class FirestoreRoleStore<TRole>: IRoleStore<TRole> where TRole : 
             throw new ArgumentNullException(nameof(role));
         }
 
-        cancellationToken.ThrowIfCancellationRequested();
+        role.Id = Guid.NewGuid().ToString("N");
         
         await _roleRef.AddAsync(role, cancellationToken);
 
@@ -94,23 +94,29 @@ public partial class FirestoreRoleStore<TRole>: IRoleStore<TRole> where TRole : 
     {
         cancellationToken.ThrowIfCancellationRequested();
         ThrowIfDisposed();
-        
-        var identityRole = await ReadRoleAsync(role.Id, cancellationToken);
 
-        return identityRole.Id;
+        if (role == null)
+        {
+            throw new ArgumentNullException(nameof(role));
+        }
+
+        return role.Id;
     }
 
     public async Task<string> GetRoleNameAsync(TRole role, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         ThrowIfDisposed();
-        
-        var identityRole = await ReadRoleAsync(role.Id, cancellationToken);
 
-        return identityRole.Name;
+        if (role == null)
+        {
+            throw new ArgumentNullException(nameof(role));
+        }
+
+        return role.Name;
     }
 
-    public async Task SetRoleNameAsync(TRole role, string roleName, CancellationToken cancellationToken)
+    public Task SetRoleNameAsync(TRole role, string roleName, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         ThrowIfDisposed();
@@ -120,26 +126,30 @@ public partial class FirestoreRoleStore<TRole>: IRoleStore<TRole> where TRole : 
             throw new ArgumentNullException(nameof(roleName));
         }
         
-        var identityRole = await ReadRoleAsync(role.Id, cancellationToken);
+        if (role == null)
+        {
+            throw new ArgumentNullException(nameof(role));
+        }
 
-        identityRole.Name = roleName;
-
-        await _roleRef
-            .Document(role.Id)
-            .SetAsync(identityRole, SetOptions.MergeAll, cancellationToken);
+        role.Name = roleName;
+        
+        return Task.CompletedTask;
     }
 
     public async Task<string> GetNormalizedRoleNameAsync(TRole role, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         ThrowIfDisposed();
-        
-        var identityRole = await ReadRoleAsync(role.Id, cancellationToken);
 
-        return identityRole.NormalizedName;
+        if (role == null)
+        {
+            throw new ArgumentNullException(nameof(role));
+        }
+
+        return role.NormalizedName;
     }
 
-    public async Task SetNormalizedRoleNameAsync(TRole role, string normalizedName, CancellationToken cancellationToken)
+    public Task SetNormalizedRoleNameAsync(TRole role, string normalizedName, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         ThrowIfDisposed();
@@ -149,13 +159,14 @@ public partial class FirestoreRoleStore<TRole>: IRoleStore<TRole> where TRole : 
             throw new ArgumentNullException(nameof(normalizedName));
         }
         
-        var identityRole = await ReadRoleAsync(role.Id, cancellationToken);
+        if (role == null)
+        {
+            throw new ArgumentNullException(nameof(role));
+        }
 
-        identityRole.NormalizedName = normalizedName;
-
-        await _roleRef
-            .Document(role.Id)
-            .SetAsync(identityRole, SetOptions.MergeAll, cancellationToken);
+        role.NormalizedName = normalizedName;
+        
+        return Task.CompletedTask;
     }
 
     public async Task<TRole> FindByIdAsync(string roleId, CancellationToken cancellationToken)
@@ -175,20 +186,20 @@ public partial class FirestoreRoleStore<TRole>: IRoleStore<TRole> where TRole : 
         ThrowIfDisposed();
 
         var query = await _roleRef
-            .WhereEqualTo(nameof(FirestoreIdentityUser.NormalizedUserName), normalizedRoleName)
+            .WhereEqualTo(nameof(FirestoreIdentityRole.NormalizedName), normalizedRoleName)
             .Limit(1)
             .GetSnapshotAsync(cancellationToken);
 
         if (query.Count <= 0)
         {
-            throw new ArgumentNullException(nameof(query));
+            return null;
         }
         
         var userDoc = query.Documents.FirstOrDefault();
 
         if (userDoc == null)
         {
-            throw new ArgumentNullException(nameof(userDoc));
+            return null;
         }
 
         return userDoc.ConvertTo<TRole>();
@@ -202,14 +213,14 @@ public partial class FirestoreRoleStore<TRole>: IRoleStore<TRole> where TRole : 
         
         if (docRef == null)
         {
-            throw new ArgumentNullException(nameof(docRef));
+            return null;
         }
         
         var role = docRef.ConvertTo<TRole>();
 
         if (role == null)
         {
-            throw new ArgumentNullException(nameof(role));
+            return null;
         }
                 
         role.Id = docRef.Id;

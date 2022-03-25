@@ -12,7 +12,7 @@ public static class IdentityBuilderExtensions
         
     private static IdentityBuilder AddFirestoreUserStore(this IdentityBuilder builder)
     {
-        var userStoreType = typeof(FirestoreUserStore<>).MakeGenericType(builder.UserType);
+        var userStoreType = typeof(FirestoreUserStore<,>).MakeGenericType(builder.UserType, builder.RoleType);
 
         builder.Services.AddScoped(
             typeof(IUserStore<>).MakeGenericType(builder.UserType),

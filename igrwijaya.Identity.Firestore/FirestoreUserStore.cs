@@ -3,15 +3,18 @@ using Microsoft.AspNetCore.Identity;
 
 namespace igrwijaya.Identity.Firestore;
 
-public partial class FirestoreUserStore<TUser> :
+public partial class FirestoreUserStore<TUser, TRole> :
     IUserStore<TUser>,
+    IUserEmailStore<TUser>,
     IUserPasswordStore<TUser>,
-    IUserRoleStore<TUser>
+    IUserRoleStore<TUser> 
     where TUser : FirestoreIdentityUser
+    where TRole : FirestoreIdentityRole
 {
-    #region Private Methods
+    #region Fields
 
     private readonly CollectionReference _userDataRef;
+    private readonly CollectionReference _roleDataRef;
 
     #endregion
     
@@ -22,6 +25,7 @@ public partial class FirestoreUserStore<TUser> :
         ErrorDescriber = errorDescriber;
         var firestore = FirestoreDb.Create(Environment.GetEnvironmentVariable("GOOGLE_PROJECT_ID"));
         _userDataRef = firestore.Collection("users");
+        _roleDataRef = firestore.Collection("roles");
     }
 
     #region IDisposable
@@ -42,6 +46,8 @@ public partial class FirestoreUserStore<TUser> :
     }
 
     #endregion
+
+    #region User Store
 
     public async Task<string> GetUserIdAsync(TUser user, CancellationToken cancellationToken)
     {
@@ -93,10 +99,13 @@ public partial class FirestoreUserStore<TUser> :
     {
         cancellationToken.ThrowIfCancellationRequested();
         ThrowIfDisposed();
-        
-        var userResult = await ReadUserAsync(user.Id, cancellationToken);
 
-        return userResult.NormalizedUserName;
+        if (user == null)
+        {
+            throw new ArgumentNullException(nameof(user));
+        }
+
+        return user.NormalizedUserName;
     }
 
     public Task SetNormalizedUserNameAsync(TUser user, string normalizedName, CancellationToken cancellationToken)
@@ -130,8 +139,12 @@ public partial class FirestoreUserStore<TUser> :
         }
 
         cancellationToken.ThrowIfCancellationRequested();
+
+        user.Id = Guid.NewGuid().ToString("N");
         
-        await _userDataRef.Document(user.Id).SetAsync(user, SetOptions.MergeAll, cancellationToken);
+        await _userDataRef
+            .Document(user.Id)
+            .SetAsync(user, SetOptions.MergeAll, cancellationToken);
 
         return IdentityResult.Success;
     }
@@ -205,7 +218,7 @@ public partial class FirestoreUserStore<TUser> :
 
         return userDoc.ConvertTo<TUser>();
     }
-
+    
     private async Task<TUser> ReadUserAsync(string userId, CancellationToken cancellationToken)
     {
         var docRef = await _userDataRef
@@ -214,7 +227,7 @@ public partial class FirestoreUserStore<TUser> :
         
         if (docRef == null)
         {
-            throw new ArgumentNullException(nameof(docRef));
+            return null;
         }
         
         var user = docRef.ConvertTo<TUser>();
@@ -228,6 +241,10 @@ public partial class FirestoreUserStore<TUser> :
 
         return user;
     }
+
+    #endregion
+
+    #region User Password
 
     public Task SetPasswordHashAsync(TUser user, string passwordHash, CancellationToken cancellationToken)
     {
@@ -259,31 +276,376 @@ public partial class FirestoreUserStore<TUser> :
 
     public async Task<bool> HasPasswordAsync(TUser user, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        cancellationToken.ThrowIfCancellationRequested();
+        ThrowIfDisposed();
+
+        if (user == null)
+        {
+            throw new ArgumentNullException(nameof(user));
+        }
+
+        return string.IsNullOrEmpty(user.PasswordHash);
     }
+
+    #endregion
+
+    #region User Role
 
     public async Task AddToRoleAsync(TUser user, string roleName, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        cancellationToken.ThrowIfCancellationRequested();
+        ThrowIfDisposed();
+        
+        if (user == null)
+        {
+            throw new ArgumentNullException(nameof(user));
+        }
+        
+        if (string.IsNullOrWhiteSpace(roleName))
+        {
+            throw new ArgumentNullException(nameof(roleName));
+        }
+        
+        var query = await _roleDataRef
+            .WhereEqualTo(nameof(FirestoreIdentityRole.Name), roleName)
+            .Limit(1)
+            .GetSnapshotAsync(cancellationToken);
+
+        if (query.Count <= 0)
+        {
+            throw new ArgumentNullException(nameof(query));
+        }
+        
+        var roleDoc = query.Documents.FirstOrDefault();
+
+        if (roleDoc == null)
+        {
+            throw new ArgumentNullException(nameof(roleDoc));
+        }
+
+        await _userDataRef
+            .Document(user.Id)
+            .Collection("user-roles")
+            .AddAsync(new FirestoreUserRole
+            {
+                UserId = user.Id,
+                RoleId = roleDoc.Id
+            }, cancellationToken);
+
+        await _roleDataRef
+            .Document(roleDoc.Id)
+            .Collection("users")
+            .AddAsync(new FirestoreUserRole
+            {
+                UserId = user.Id,
+                RoleId = roleDoc.Id
+            }, cancellationToken);
     }
 
     public async Task RemoveFromRoleAsync(TUser user, string roleName, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        cancellationToken.ThrowIfCancellationRequested();
+        ThrowIfDisposed();
+        
+        if (user == null)
+        {
+            throw new ArgumentNullException(nameof(user));
+        }
+        
+        if (string.IsNullOrWhiteSpace(roleName))
+        {
+            throw new ArgumentNullException(nameof(roleName));
+        }
+        
+        var query = await _roleDataRef
+            .WhereEqualTo(nameof(FirestoreIdentityRole.Name), roleName)
+            .Limit(1)
+            .GetSnapshotAsync(cancellationToken);
+
+        if (query.Count <= 0)
+        {
+            throw new ArgumentNullException(nameof(query));
+        }
+        
+        var roleDoc = query.Documents.FirstOrDefault();
+
+        if (roleDoc == null)
+        {
+            throw new ArgumentNullException(nameof(roleDoc));
+        }
+
+        var userRoleSnapshot = await _userDataRef
+            .Document(user.Id)
+            .Collection("user-roles")
+            .WhereEqualTo(nameof(FirestoreUserRole.RoleId), roleDoc.Id)
+            .GetSnapshotAsync(cancellationToken);
+
+        foreach (var userRole in userRoleSnapshot)
+        {
+            await _userDataRef
+                .Document(user.Id)
+                .Collection("user-roles")
+                .Document(userRole.Id)
+                .DeleteAsync(Precondition.MustExist, cancellationToken);
+        }
+        
+        
+        var roleSnapshot = await _roleDataRef
+            .Document(roleDoc.Id)
+            .Collection("users")
+            .WhereEqualTo(nameof(user.Id), user.Id)
+            .GetSnapshotAsync(cancellationToken);
+
+        foreach (var role in roleSnapshot)
+        {
+            await _roleDataRef
+                .Document(roleDoc.Id)
+                .Collection("users")
+                .Document(role.Id)
+                .DeleteAsync(Precondition.MustExist, cancellationToken);
+        }
     }
 
     public async Task<IList<string>> GetRolesAsync(TUser user, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        cancellationToken.ThrowIfCancellationRequested();
+        ThrowIfDisposed();
+        
+        if (user == null)
+        {
+            throw new ArgumentNullException(nameof(user));
+        }
+
+        var userRoleSnapshot = await _userDataRef
+            .Document(user.Id)
+            .Collection("user-roles")
+            .GetSnapshotAsync(cancellationToken);
+
+        var roleIds = userRoleSnapshot
+            .Documents
+            .Select(item => item.ConvertTo<FirestoreUserRole>().RoleId)
+            .ToList();
+
+        if (!roleIds.Any())
+        {
+            return new List<string>();
+        }
+
+        var roleSnapshot = await _roleDataRef
+            .WhereIn(nameof(FirestoreIdentityRole.Id), roleIds)
+            .GetSnapshotAsync(cancellationToken);
+
+        return roleSnapshot
+            .Documents
+            .Select(item => item.ConvertTo<TRole>().Name)
+            .ToList();
     }
 
     public async Task<bool> IsInRoleAsync(TUser user, string roleName, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        cancellationToken.ThrowIfCancellationRequested();
+        ThrowIfDisposed();
+        
+        if (user == null)
+        {
+            throw new ArgumentNullException(nameof(user));
+        }
+        
+        if (string.IsNullOrWhiteSpace(roleName))
+        {
+            throw new ArgumentNullException(nameof(roleName));
+        }
+        
+        var query = await _roleDataRef
+            .WhereEqualTo(nameof(FirestoreIdentityRole.Name), roleName)
+            .Limit(1)
+            .GetSnapshotAsync(cancellationToken);
+
+        if (query.Count <= 0)
+        {
+            throw new ArgumentNullException(nameof(query));
+        }
+        
+        var roleDoc = query.Documents.FirstOrDefault();
+
+        if (roleDoc == null)
+        {
+            throw new ArgumentNullException(nameof(roleDoc));
+        }
+        
+        var userRoleSnapshot = await _userDataRef
+            .Document(user.Id)
+            .Collection("user-roles")
+            .WhereEqualTo(nameof(FirestoreUserRole.RoleId), roleDoc.Id)
+            .GetSnapshotAsync(cancellationToken);
+
+        return userRoleSnapshot.Count > 0;
     }
 
     public async Task<IList<TUser>> GetUsersInRoleAsync(string roleName, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        cancellationToken.ThrowIfCancellationRequested();
+        ThrowIfDisposed();
+
+        if (string.IsNullOrWhiteSpace(roleName))
+        {
+            throw new ArgumentNullException(nameof(roleName));
+        }
+        
+        var query = await _roleDataRef
+            .WhereEqualTo(nameof(FirestoreIdentityRole.Name), roleName)
+            .Limit(1)
+            .GetSnapshotAsync(cancellationToken);
+
+        if (query.Count <= 0)
+        {
+            throw new ArgumentNullException(nameof(query));
+        }
+
+        var roleDoc = query.Documents.FirstOrDefault();
+
+        if (roleDoc == null)
+        {
+            throw new ArgumentNullException(nameof(roleDoc));
+        }
+
+        var userInRoleSnapshot = await _roleDataRef
+            .Document(roleDoc.Id)
+            .Collection("users")
+            .GetSnapshotAsync(cancellationToken);
+
+        var userIds = userInRoleSnapshot
+            .Documents
+            .Select(item => item.ConvertTo<FirestoreUserRole>().UserId)
+            .ToList();
+
+        if (!userIds.Any())
+        {
+            return new List<TUser>();
+        }
+        
+        var userSnapshot = await _userDataRef
+            .WhereIn(nameof(FirestoreIdentityUser.Id), userIds)
+            .GetSnapshotAsync(cancellationToken);
+
+        return userSnapshot
+            .Documents
+            .Select(item => item.ConvertTo<TUser>())
+            .ToList();
     }
+
+    #endregion
+
+    #region User Email
+
+    public Task SetEmailAsync(TUser user, string email, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ThrowIfDisposed();
+        
+        if (string.IsNullOrEmpty(email) || user == null)
+        {
+            throw new ArgumentNullException(nameof(email));
+        }
+
+        user.PasswordHash = email;
+
+        return Task.FromResult(0);
+    }
+
+    public async Task<string> GetEmailAsync(TUser user, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ThrowIfDisposed();
+
+        if (user == null)
+        {
+            throw new ArgumentNullException(nameof(user));
+        }
+
+        return user.Email;
+    }
+
+    public async Task<bool> GetEmailConfirmedAsync(TUser user, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ThrowIfDisposed();
+
+        if (user == null)
+        {
+            throw new ArgumentNullException(nameof(user));
+        }
+
+        return user.EmailConfirmed;
+    }
+
+    public Task SetEmailConfirmedAsync(TUser user, bool confirmed, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ThrowIfDisposed();
+        
+        if (user == null)
+        {
+            throw new ArgumentNullException(nameof(user));
+        }
+
+        user.EmailConfirmed = confirmed;
+
+        return Task.FromResult(0);
+    }
+
+    public async Task<TUser> FindByEmailAsync(string normalizedEmail, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ThrowIfDisposed();
+
+        var query = await _userDataRef
+            .WhereEqualTo(nameof(FirestoreIdentityUser.NormalizeEmail), normalizedEmail)
+            .Limit(1)
+            .GetSnapshotAsync(cancellationToken);
+
+        if (query.Count <= 0)
+        {
+            return null;
+        }
+        
+        var userDoc = query.Documents.FirstOrDefault();
+
+        if (userDoc == null)
+        {
+            return null;
+        }
+
+        return userDoc.ConvertTo<TUser>();
+    }
+
+    public async Task<string> GetNormalizedEmailAsync(TUser user, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ThrowIfDisposed();
+
+        if (user == null)
+        {
+            throw new ArgumentNullException(nameof(user));
+        }
+
+        return user.NormalizeEmail;
+    }
+
+    public Task SetNormalizedEmailAsync(TUser user, string normalizedEmail, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ThrowIfDisposed();
+        
+        if (user == null)
+        {
+            throw new ArgumentNullException(nameof(user));
+        }
+
+        user.NormalizeEmail = normalizedEmail;
+
+        return Task.FromResult(0);
+    }
+
+    #endregion
 }

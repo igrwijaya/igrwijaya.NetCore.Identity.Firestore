@@ -10,8 +10,8 @@ public class ApplicationUser : FirestoreIdentityUser
     {
         
     }
-    
-    public ApplicationUser(string userName) : base(userName)
+
+    public ApplicationUser(string userName, string email) : base(userName, email)
     {
     }
 }
