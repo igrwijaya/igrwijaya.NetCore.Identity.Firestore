@@ -4,6 +4,13 @@
         <TargetFramework>net6.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <Title>NET Core Identity using Firestore Data Store</Title>
+        <Authors>igrwijaya</Authors>
+        <Copyright>igrwijaya</Copyright>
+        <PackageProjectUrl>https://github.com/igrwijaya/igrwijaya.NetCore.Identity.Firestore</PackageProjectUrl>
+        <PackageLicenseUrl>https://github.com/igrwijaya/igrwijaya.NetCore.Identity.Firestore</PackageLicenseUrl>
+        <RepositoryUrl>https://github.com/igrwijaya/igrwijaya.NetCore.Identity.Firestore</RepositoryUrl>
+        <PackageTags>netcore, identity, firestore</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
