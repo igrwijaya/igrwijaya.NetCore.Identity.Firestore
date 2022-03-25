@@ -11,7 +11,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\igrwijaya.Identity.Firestore\igrwijaya.Identity.Firestore.csproj" />
+      <ProjectReference Include="..\igrwijaya.NetCore.Identity.Firestore\igrwijaya.NetCore.Identity.Firestore.csproj" />
     </ItemGroup>
 
 </Project>

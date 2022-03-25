@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace igrwijaya.Identity.Firestore;
+namespace igrwijaya.NetCore.Identity.Firestore;
 
 public static class IdentityBuilderExtensions
 {

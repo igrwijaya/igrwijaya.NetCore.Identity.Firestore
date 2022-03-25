@@ -1,6 +1,6 @@
 ﻿using Google.Cloud.Firestore;
 
-namespace igrwijaya.Identity.Firestore;
+namespace igrwijaya.NetCore.Identity.Firestore;
 
 [FirestoreData]
 public class FirestoreIdentityRole

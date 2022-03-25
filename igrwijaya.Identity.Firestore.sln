@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "igrwijaya.Identity.Firestore", "igrwijaya.Identity.Firestore\igrwijaya.Identity.Firestore.csproj", "{2CCA261A-CBCD-4CCA-A86A-6E33121830E3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "igrwijaya.NetCore.Identity.Firestore", "igrwijaya.NetCore.Identity.Firestore\igrwijaya.NetCore.Identity.Firestore.csproj", "{2CCA261A-CBCD-4CCA-A86A-6E33121830E3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "igrwijaya.Test.Api", "igrwijaya.Test.Api\igrwijaya.Test.Api.csproj", "{D22A53A4-2E8C-40DA-89A1-BD31660E1953}"
 EndProject

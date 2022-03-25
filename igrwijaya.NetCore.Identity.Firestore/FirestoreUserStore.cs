@@ -1,7 +1,7 @@
 ﻿using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Identity;
 
-namespace igrwijaya.Identity.Firestore;
+namespace igrwijaya.NetCore.Identity.Firestore;
 
 public partial class FirestoreUserStore<TUser, TRole> :
     IUserStore<TUser>,

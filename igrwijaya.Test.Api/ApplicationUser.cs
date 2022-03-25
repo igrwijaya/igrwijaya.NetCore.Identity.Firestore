@@ -1,5 +1,5 @@
 ﻿using Google.Cloud.Firestore;
-using igrwijaya.Identity.Firestore;
+using igrwijaya.NetCore.Identity.Firestore;
 
 namespace igrwijaya.Test.Api;
 

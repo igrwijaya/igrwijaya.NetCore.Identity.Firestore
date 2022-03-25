@@ -1,4 +1,4 @@
-﻿using igrwijaya.Identity.Firestore;
+﻿using igrwijaya.NetCore.Identity.Firestore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
